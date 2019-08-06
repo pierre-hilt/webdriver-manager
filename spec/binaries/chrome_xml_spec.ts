@@ -1,17 +1,27 @@
 import * as path from 'path';
-import * as rimraf from 'rimraf';
 import {ChromeXml} from '../../lib/binaries/chrome_xml';
-import {Config} from '../../lib/config';
+import { chromeXmlMock } from './chrome_xml_mock';
+import * as xml2js from 'xml2js';
+
+class ChromeXmlMock extends ChromeXml {
+  getXml() {
+    let retResult;
+    xml2js.parseString(chromeXmlMock, (err, result) => {
+      retResult = result;
+    });
+    return Promise.resolve(retResult);
+  }
+}
 
 describe('chrome xml reader', () => {
   let out_dir = path.resolve('selenium_test');
-
-  afterAll(() => {
-    rimraf.sync(out_dir);
-  });
+  let chromeXml: ChromeXml;
+  
+  beforeEach(() => {
+    chromeXml = new ChromeXmlMock();
+  })
 
   it('should get a list', (done) => {
-    let chromeXml = new ChromeXml();
     chromeXml.out_dir = out_dir;
     chromeXml.ostype = 'Darwin';
     chromeXml.osarch = 'x64';
@@ -24,7 +34,6 @@ describe('chrome xml reader', () => {
   });
 
   it('should get the 2.27, 64-bit version (arch = x64)', (done) => {
-    let chromeXml = new ChromeXml();
     chromeXml.out_dir = out_dir;
     chromeXml.ostype = 'Darwin';
     chromeXml.osarch = 'x64';
@@ -35,7 +44,6 @@ describe('chrome xml reader', () => {
   });
 
   it('should get the 2.27, 64-bit version (arch = x86)', (done) => {
-    let chromeXml = new ChromeXml();
     chromeXml.out_dir = out_dir;
     chromeXml.ostype = 'Darwin';
     chromeXml.osarch = 'x86';
@@ -46,7 +54,6 @@ describe('chrome xml reader', () => {
   });
 
   it('should get the 2.20, 32-bit version (arch = x64)', (done) => {
-    let chromeXml = new ChromeXml();
     chromeXml.out_dir = out_dir;
     chromeXml.ostype = 'Darwin';
     chromeXml.osarch = 'x64';
@@ -57,12 +64,21 @@ describe('chrome xml reader', () => {
   });
 
   it('should get the 2.20, 32-bit version (arch = x86)', (done) => {
-    let chromeXml = new ChromeXml();
     chromeXml.out_dir = out_dir;
     chromeXml.ostype = 'Darwin';
     chromeXml.osarch = 'x86';
     chromeXml.getUrl('2.20').then((binaryUrl) => {
       expect(binaryUrl.url).toContain('2.20/chromedriver_mac32.zip');
+      done();
+    });
+  });
+
+  it('should get latest version', (done) => {
+    chromeXml.out_dir = out_dir;
+    chromeXml.ostype = 'Windows_NT';
+    chromeXml.osarch = 'x64';
+    chromeXml.getUrl('latest').then((binaryUrl) => {
+      expect(binaryUrl.url).toContain('76.0.3809.68/chromedriver_win32.zip');
       done();
     });
   });
